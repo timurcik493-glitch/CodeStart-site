@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeStart — Интерактивный космический справочник по программированию</title>
+    
+    <!-- Open Graph / SEO метатеги -->
+    <meta name="description" content="CodeStart — ваш космический путеводитель в мир программирования. Теория, живая песочница кода, roadmap.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="CodeStart — Космический справочник по программированию">
+    <meta property="og:description" content="Изучайте Python, Go, Java, C++ и JS с помощью интерактивной песочницы.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200">
+
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+	    background: linear-gradient(135deg, #0b0b16, #15152b, #1f1226);
+            background-size: 300% 300%;
+            animation: spaceBackground 15s ease infinite;
+            color: #f1f5f9;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Объемный анимированный космический фон */
+        #space-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Левая панель с оглавлением */
+        .sidebar {
+            width: 300px;
+            height: 100vh;
+            background: rgba(5, 5, 8, 0.85);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: "Fira Code", monospace;
+            letter-spacing: -0.5px;
+        }
+
+        .logo .code { color: #ffffff; }
+        .logo .start { color: #ff7b00; }
+
+        .motion-toggle {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ff7b00;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+
+        .motion-toggle:hover {
+            background: rgba(255, 123, 0, 0.2);
+            border-color: #ff7b00;
+        }
+
+        .search-box {
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #ff7b00;
+            box-shadow: 0 0 10px rgba(255, 123, 0, 0.3);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            overflow-y: auto;
+        }
+	
+	 .nav-links a {
+            text-decoration: none;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+	    transition: all 0.25s ease;
+            display: block;
+            border: 1px solid transparent;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #ffffff;
+            background: rgba(255, 123, 0, 0.12);
+            border-color: rgba(255, 123, 0, 0.3);
+            border-left: 4px solid #ff7b00;
+            padding-left: 1rem;
+        }
+
+        /* Основной контент */
+        .content {
+            margin-left: 300px;
+            flex: 1;
+            padding: 3rem 4rem;
+            max-width: 1000px;
+            position: relative;
+            z-index: 10;
+        }
+
+        section {
+            margin-bottom: 5rem;
+            padding-top: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 4rem;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            font-family: "Fira Code", monospace;
+        }
+
+        h2 span { color: #ff7b00; }
+
+        p {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            margin-bottom: 1.2rem;
+        }
+
+        /* Карточки языков */
+        .lang-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin: 2rem 0;
+        }
+
+        .lang-card {
+            background: rgba(15, 15, 22, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .lang-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 123, 0, 0.6);
+            box-shadow: 0 10px 25px rgba(255, 123, 0, 0.15);
+        }
+
+        .lang-card h3 {
+            color: #ff7b00;
+            font-family: "Fira Code", monospace;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Блок кода с подсветкой */
+        .code-container {
+            background: rgba(8, 8, 12, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .code-header {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.6rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: "Fira Code", monospace;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #ff7b00;
+            border-color: #ff7b00;
+            color: #fff;
+        }
+
+        pre {
+            padding: 1.2rem;
+            font-family: "Fira Code", monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            color: #e2e8f0;
+        }
+
+        .kw { color: #ff79c6; }
+        .fn { color: #50fa7b; }
+        .str { color: #f1fa8c; }
+        .cm { color: #6272a4; }
+
+        /* Вкладки */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+	.tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 0.5rem 1rem;
+	    border-radius: 6px;
+	     cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #ff7b00;
+            color: #fff;
+            border-color: #ff7b00;
+        }
+
+        /* Песочница */
+        .playground-card {
+            background: rgba(15, 15, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-top: 1.5rem;
+        }
+
+        .playground-editor {
+            width: 100%;
+            height: 180px;
+            background: rgba(8, 8, 12, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #50fa7b;
+            font-family: "Fira Code", monospace;
+            font-size: 0.9rem;
+            padding: 1rem;
+            outline: none;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .playground-output {
+            margin-top: 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: "Fira Code", monospace;
+            font-size: 0.85rem;
+            color: #f1f5f9;
+            min-height: 80px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .run-btn {
+            background: #ff7b00;
+            color: #ffffff;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .run-btn:hover { background: #e66f00; }
+
+        /* Тест */
+        .quiz-card {
+            background: rgba(15, 15, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .quiz-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .quiz-progress-bar {
+            height: 100%;
+            background: #ff7b00;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-top: 1.2rem;
+        }
+
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .quiz-option:hover {
+            background: rgba(255, 123, 0, 0.15);
+            border-color: #ff7b00;
+            color: #ffffff;
+        }
+
+        .quiz-btn {
+            background: #ff7b00;
+            color: #ffffff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 1.5rem;
+        }
+
+        /* Шпаргалки */
+        .cheatsheet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .cheat-card {
+            background: rgba(15, 15, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.2rem;
+            backdrop-filter: blur(12px);
+        }
+	
+	.cheat-title {
+	    font-family: "Fira Code", monospace;
+	     color: #ff7b00;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        .cheat-desc {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 0.8rem;
+        }
+
+        /* Roadmap */
+        .roadmap-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            position: relative;
+            padding-left: 1.5rem;
+            border-left: 2px solid rgba(255, 123, 0, 0.3);
+        }
+
+        .roadmap-step {
+            background: rgba(15, 15, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            backdrop-filter: blur(12px);
+        }
+
+        .roadmap-step::before {
+            content: '';
+            position: absolute;
+            left: -2.1rem;
+            top: 1.8rem;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ff7b00;
+            box-shadow: 0 0 10px #ff7b00;
+        }
+
+        .roadmap-level {
+            font-family: "Fira Code", monospace;
+            color: #ff7b00;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .roadmap-title {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+        }
+
+        .roadmap-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .roadmap-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff7b00, #a855f7);
+        }
+
+        /* Форма контактов */
+        .contact-card {
+            background: rgba(15, 15, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #ff7b00;
+            box-shadow: 0 0 10px rgba(255, 123, 0, 0.25);
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #ff7b00;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            font-weight: 600;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 850px) {
+            body { flex-direction: column; }
+            .sidebar { position: relative; width: 100%; height: auto; }
+            .content { margin-left: 0; padding: 2rem 1.5rem; }
+        }
+/* === СТИЛИ ДЛЯ ГЛАВНОЙ ШАПКИ (HERO) === */
+.hero-section {
+    text-align: center;
+    padding: 3.5rem 1.5rem 2.5rem;
+    margin-bottom: 2.5rem;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 123, 0, 0.25);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ff7b00;
+    background: rgba(255, 123, 0, 0.1);
+    border: 1px solid rgba(255, 123, 0, 0.3);
+    border-radius: 50px;
+    margin-bottom: 1.2rem;
+}
+
+.hero-title {
+    font-size: 3.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 0.8rem;
+    color: #ffffff;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, #ff7b00 0%, #ffae00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 25px rgba(255, 123, 0, 0.3);
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    color: #94a3b8;
+    max-width: 650px;
+    margin: 0 auto 1.8rem;
+    line-height: 1.6;
+}
+
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+}
+
+.btn {
+    padding: 0.8rem 1.6rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #ff7b00;
+    color: #030208;
+    box-shadow: 0 4px 15px rgba(255, 123, 0, 0.3);
+}
+
+.btn-primary:hover {
+    background: #ff9226;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.hero-stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.8rem;
+    padding: 0.8rem 1.8rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-num {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ff7b00;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 25px;
+    background: rgba(255, 255, 255, 0.1);
+}
+* Эффект мигающего курсора печатной машинки */
+.typing-cursor {
+    color: #ff7b00;
+    font-weight: 300;
+    margin-left: 2px;
+    animation: blinkCursor 0.8s infinite;
+}
+
+@keyframes blinkCursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+/* === 2. ПУЛЬСИРУЮЩЕЕ СВЕЧЕНИЕ И СТЕКЛЯННАЯ КАРТОЧКА === */
+.hero-section {
+    background: rgba(15, 20, 32, 0.6) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 123, 0, 0.25) !important;
+    border-radius: 20px !important;
+    padding: 40px !important;
+    box-shadow: 0 0 25px rgba(255, 123, 0, 0.15), 
+                inset 0 0 15px rgba(255, 123, 0, 0.08);
+    animation: heroPulse 4s ease-in-out infinite alternate;
+}
+
+/* Эффект дыхания / пульсации неоновой рамки */
+@keyframes heroPulse {
+    0% {
+        border-color: rgba(255, 123, 0, 0.25);
+        box-shadow: 0 0 25px rgba(255, 123, 0, 0.15), 
+                    inset 0 0 15px rgba(255, 123, 0, 0.05);
+    }
+    100% {
+        border-color: rgba(255, 199, 0, 0.55);
+        box-shadow: 0 0 45px rgba(255, 123, 0, 0.35), 
+                    inset 0 0 25px rgba(255, 199, 0, 0.15);
+    }
+}
+/* === 3. НЕОНОВЫЕ КНОПКИ И ГРАДИЕНТ ТЕКСТА === */
+
+/* Анимированный огненный градиент для текста */
+.gradient-text {
+    background: linear-gradient(135deg, #ff7b00 0%, #ffc700 50%, #ff3c00 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shineText 3s linear infinite;
+}
+
+@keyframes shineText {
+    to { background-position: 200% center; }
+}
+
+/* Стилизация и анимация кнопок */
+.hero-actions .btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+}
+
+/* Эффект пролетающего блика при наведении */
+.hero-actions .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: 0.5s;
+}
+
+.hero-actions .btn:hover::before {
+    left: 100%;
+}
+
+/* Подъем и неоновое свечение кнопки при наведении */
+.hero-actions .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 123, 0, 0.4);
+}
+/* === КАСТОМНЫЙ НЕОНОВЫЙ СКРОЛЛБАР === */
+
+/* Ширина полосы прокрутки */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+/* Дорожка, по которой ползает ползунок */
+::-webkit-scrollbar-track {
+    background: #080c14;
+    border-left: 1px solid rgba(255, 123, 0, 0.1);
+}
+
+/* Сам ползунок */
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ff7b00 0%, #ff3c00 100%);
+    border-radius: 20px;
+    border: 2px solid #080c14; /* Внутренний отступ для изящности */
+    box-shadow: 0 0 10px rgba(255, 123, 0, 0.5);
+    transition: background 0.3s ease;
+}
+
+/* Эффект при наведении мышкой на ползунок */
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #ff9d00 0%, #ff5500 100%);
+    box-shadow: 0 0 15px rgba(255, 157, 0, 0.8);
+}
+/* Интерактивный неоновый логотип */
+.logo {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: inline-block;
+}
+
+.logo:hover {
+    transform: scale(1.08) rotate(-2deg);
+    filter: drop-shadow(0 0 12px rgba(255, 123, 0, 0.8));
+}
+/* Сам тост-бокс (изначально спрятан внизу экрана) */
+#toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1e1e2f;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid #00ff88;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    font-family: inherit;
+    font-size: 14px;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+/* Класс, когда уведомление появляется */
+#toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+@keyframes spaceBackground {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+/* Класс для плавного появления блоков */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* Класс для плавного появления блоков */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+    </style>
+</head>
+    <!-- Индикатор скролла страницы -->
+    <div id="scroll-progress"></div>
+    <!-- Живой космический фон -->
+    <canvas id="space-canvas"></canvas>
+
+    <!-- Левая панель меню -->
+    <aside class="sidebar">
+        <div class="logo-row">
+            <div class="logo">
+		<span class="code">Code</span><span class="start">Start</span>
+	      </div>
+            <button class="motion-toggle" id="motionBtn" onclick="toggleMotion()">3D: Вкл</button>
+        </div>
+	 <div class="search-box">
+            <input type="text" id="searchInput" onkeyup="filterMenu()" placeholder="Поиск по разделам...">
+        </div>
+        <ul class="nav-links" id="menuList">
+            <li><a href="#intro" class="active">1. Введение</a></li>
+            <li><a href="#overview">2. Языки программирования</a></li>
+            <li><a href="#python">3. Язык Python</a></li>
+            <li><a href="#go">4. Язык Go</a></li>
+            <li><a href="#java">5. Язык Java</a></li>
+            <li><a href="#cpp">6. Язык C++</a></li>
+            <li><a href="#playground">7. Песочница кода</a></li>
+            <li><a href="#roadmap">8. Дорожная карта (Roadmap)</a></li>
+            <li><a href="#contact">9. Оставить заявку</a></li>
+        </ul>
+    </aside>
+
+<!-- Основной контент страницы -->
+    <main class="content">
+<!-- === ГЛАВНАЯ ШАПКА-ПРИВЕТСТВИЕ === -->
+<section id="hero" class="hero-section">
+    <div class="hero-badge">🚀 Твой быстрый старт в IT</div>
+    <h1 class="hero-title"><span id="typing-title" class="gradient-text"></span><span class="typing-cursor">|</span></h1>
+    <p class="hero-subtitle">
+        Интерактивный путеводитель по программированию. Выбери идеальный язык, изучи базовые концепции и опробуй код прямо в браузере.
+    </p>
+    
+    <div class="hero-actions">
+        <a href="#quiz" class="btn btn-primary">Пройти тест (Какой язык выбрать?)</a>
+        <a href="#playground" class="btn btn-secondary">Открыть Песочницу</a>
+    </div>
+
+    <div class="hero-stats">
+        <div class="stat-item">
+            <span class="stat-num">4</span>
+            <span class="stat-label">Языка для старта</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+            <span class="stat-num">10+</span>
+            <span class="stat-label">Готовых шпаргалок</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+            <span class="stat-num">100%</span>
+            <span class="stat-label">Интерактива</span>
+        </div>
+    </div>
+</section>
+        
+        <!-- 1. Введение -->
+        <section id="intro" class="reveal">
+            <h2><span>01.</span> Что такое программирование</h2>
+            <p><strong>Программирование</strong> — это процесс создания инструкций для компьютера, написанных на специальном языке. Компьютер не обладает собственным интеллектом, поэтому программист шаг за шагом прописывает алгоритмы решения конкретных задач.</p>
+            
+            <!-- Расширенный теоретический блок -->
+    <div class="theory-details" style="margin-top: 15px; color: #a0aec0; font-size: 16px; line-height: 1.6;">
+        <p><strong>Как устроено выполнение кода:</strong></p>
+        <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Постановка задачи:</strong> Описание проблемы на человеческом языке.</li>
+            <li><strong>Алгоритмизация:</strong> Разработка логической цепочки и схемы решения.</li>
+            <li><strong>Написание кода (Синтаксис):</strong> Перевод логики на выбранный язык программирования.</li>
+            <li><strong>Компиляция / Интерпретация:</strong> Превращение текста программы в машинный код, понятный процессору.</li>
+        </ul>
+        
+        <p><strong>➕ Плюсы программирования:</strong> Безграничные возможности для создания востребованных продуктов, полная автоматизация рутинных задач и мощная прокачка логического мышления.</p>
+        <p><strong>➖ Минусы и сложности:</strong> Высокий порог входа, требующий терпения, усидчивости и постоянного обучения, а также высокая цена ошибки, где одна опечатка может остановить работу всей системы.</p>
+    </div>
+
+            <div class="lang-grid">
+                <div class="lang-card">
+                    <h3>Автоматизация</h3>
+                    <p style="font-size: 0.85rem; margin:0;">Освобождает от рутинной работы, выполняя миллионы операций за секунды.</p>
+                </div>
+                <div class="lang-card">
+                    <h3>Архитектура</h3>
+                    <p style="font-size: 0.85rem; margin:0;">Позволяет строить масштабные распределенные системы с высокой надежностью.</p>
+                </div>
+            </div>
+        </section>
+  <!-- 2. Обзор языков -->
+        <section id="overview" class="reveal">
+            <h2><span>02.</span> Экосистема языков</h2>
+            <p>Каждый язык создавался под свою специфическую задачу: от понятного синтаксиса до предельной скорости работы с оборудованием.</p>
+            
+            <!-- Расширенный теоретический блок для Блока 02 -->
+    <div class="theory-details" style="margin-top: 15px; color: #a0aec0; font-size: 16px; line-height: 1.6;">
+        <p><strong>Как устроена экосистема языков:</strong></p>
+        <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Машинные коды и Ассемблер:</strong> Самый близкий к «железу» уровень управления процессором.</li>
+            <li><strong>Интерпретируемые языки (высокоуровневые):</strong> Код выполняется построчно (например, Python), что ускоряет разработку, но снижает скорость выполнения.</li>
+            <li><strong>Компилируемые языки:</strong> Весь код переводится в машинный файл до запуска (например, C++, Go), обеспечивая максимальное быстродействие.</li>
+            <li><strong>Виртуальные машины и среды (JVM, .NET):</strong> Кроссплатформенные решения, работающие в специальной изолированной среде.</li>
+        </ul>
+        
+        <p><strong>➕ Плюсы разнообразия языков:</strong> Под каждую конкретную задачу (от нейросетей до микроконтроллеров) можно выбрать идеальный инструмент с оптимальным балансом скорости и удобства.</p>
+        <p><strong>➖ Минусы и сложности:</strong> Порог фрагментации, необходимость изучать разные парадигмы (объектно-ориентированную, функциональную) и сложность выбора подходящего стека для новичка.</p>
+    </div>
+
+            <div class="lang-grid">
+                <div class="lang-card">
+                    <h3>Python</h3>
+                    <p style="font-size: 0.85rem; margin:0;">Простота, искусственный интеллект и обработка данных.</p>
+                </div>
+                <div class="lang-card">
+                    <h3>Go (Golang)</h3>
+                    <p style="font-size: 0.85rem; margin:0;">Высоконагруженный бэкенд и микросервисы.</p>
+                </div>
+                <div class="lang-card">
+                    <h3>Java</h3>
+                    <p style="font-size: 0.85rem; margin:0;">Крупный банковский софт и Android-разработка.</p>
+                </div>
+                <div class="lang-card">
+                    <h3>C++</h3>
+                    <p style="font-size: 0.85rem; margin:0;">Игровые движки, ОС и прямой контроль памяти.</p>
+                </div>
+            </div>
+        </section>
+  <!-- 3. Python -->
+        <section id="python" class="reveal">
+            <h2><span>03.</span> Язык Python</h2>
+            <p>Python — один из самых популярных языков в мире благодаря понятливому и лаконичному синтаксису.</p>
+
+            <!-- Расширенный теоретический блок для Блока 03 -->
+    <div class="theory-details" style="margin-top: 15px; color: #a0aec0; font-size: 16px; line-height: 1.6;">
+        <p><strong>Как устроен Python в работе:</strong></p>
+        <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Динамическая типизация:</strong> Тип данных переменной определяется во время выполнения программы, что ускоряет написание кода.</li>
+            <li><strong>Интерпретатор CPython:</strong> Стандартная реализация, транслирующая исходный код в байт-код для виртуальной машины.</li>
+            <li><strong>Управление памятью:</strong> Автоматический сборщик мусора (Garbage Collection) самостоятельно очищает неиспользуемые объекты.</li>
+            <li><strong>Экосистема пакетов:</strong> Огромный репозиторий PyPI позволяет подключать готовые модули одной командой (pip install).</li>
+        </ul>
+        
+        <p><strong>➕ Плюсы Python:</strong> Лаконичный синтаксис, максимально легкий порог входа для новичков, лидерство в сфере искусственного интеллекта, анализа данных и веб-разработки.</p>
+        <p><strong>➖ Минусы и сложности:</strong> Более низкая скорость работы по сравнению с компилируемыми языками (C++, Go) и ограничения из-за глобальной блокировки интерпретатора (GIL).</p>
+    </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab(this, 'py-basic')">Основы</button>
+                <button class="tab-btn" onclick="switchTab(this, 'py-data')">Структуры данных</button>
+            </div>
+
+            <div id="py-basic" class="tab-content">
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>main.py</span>
+			<button class="copy-btn" onclick="copyCode(this)">Скопировать</button>
+		    </div>
+    		    <pre><code>name = <span class="str">"CodeStart"</span>
+<span class="kw">def</span> <span class="fn">greet_user</span>(username):
+    <span class="kw">return</span> f<span class="str">"Добро пожаловать в {username}!"</span>
+
+print(greet_user(name))</code></pre>
+                </div>
+            </div>
+
+            <div id="py-data" class="tab-content" style="display: none;">
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>data.py</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Скопировать</button>
+                    </div>
+                    <pre><code>languages = [<span class="str">"Python"</span>, <span class="str">"Go"</span>, <span class="str">"Java"</span>, <span class="str">"C++"</span>]
+<span class="kw">for</span> lang <span class="kw">in</span> languages:
+    print(f<span class="str">"Язык: {lang}"</span>)</code></pre>
+                </div>
+            </div>
+        </section>
+  <!-- 4. Go -->
+        <section id="go" class="reveal">
+            <h2><span>04.</span> Язык Go (Golang)</h2>
+            <p>Создан Google для быстрой компиляции и эффективной параллельной работы с помощью легких горутин.</p>
+
+            <!-- Расширенный теоретический блок для Блока 04 -->
+    <div class="theory-details" style="margin-top: 15px; color: #a0aec0; font-size: 16px; line-height: 1.6;">
+        <p><strong>Как устроен Go (Golang) в работе:</strong></p>
+        <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Статическая типизация и компиляция:</strong> Код компилируется напрямую в бинарный файл без виртуальных машин, что обеспечивает высочайшую скорость работы.</li>
+            <li><strong>Горутины (Goroutines):</strong> Легковесные потоки выполнения, позволяющие запускать миллионы одновременных задач с минимальным потреблением оперативной памяти.</li>
+            <li><strong>Паттерн CSP (Коммунизирующие последовательные процессы):</strong> Передача данных между горутинами через каналы (channels) вместо классических блокировок.</li>
+            <li><strong>Отсутствие классического ООП:</strong> Вместо громоздких иерархий классов используются структуры (struct) и интерфейсы, реализуемые неявно.</li>
+        </ul>
+        
+        <p><strong>➕ Плюсы Go:</strong> Исключительное быстродействие, простейший и строгий синтаксис (без лишнего «мусора»), встроенные инструменты для параллелизма и идеальный выбор для современных микросервисов и облачных систем.</p>
+        <p><strong>➖ Минусы и сложности:</strong> Отсутствие привычного объектно-ориентированного программирования (наследования), скудная поддержка дженериков в ранних версиях и минималистичный подход, из-за которого порой приходится писать больше повторяющегося кода.</p>
+    </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>main.go</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Скопировать</button>
+                </div>
+                <pre><code><span class="kw">package</span> main
+<span class="kw">import</span> <span class="str">"fmt"</span>
+
+<span class="kw">func</span> <span class="fn">main</span>() {
+    fmt.<span class="fn">Println</span>(<span class="str">"Привет из языка Go!"</span>)
+}</code></pre>
+            </div>
+        </section>
+<!-- 5. Java -->
+        <section id="java" class="reveal">
+            <h2><span>05.</span> Язык Java</h2>
+            <p>Классический язык корпоративного уровня, функционирующий на виртуальной машине JVM.</p>
+
+            <!-- Расширенный теоретический блок для Блока 05 -->
+    <div class="theory-details" style="margin-top: 15px; color: #a0aec0; font-size: 16px; line-height: 1.6;">
+        <p><strong>Как устроен Java в работе:</strong></p>
+        <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Принцип «Написал один раз, запускай везде» (WORA):</strong> Исходный код компилируется не в машинный код ОС, а в универсальный байт-код.</li>
+            <li><strong>Виртуальная машина Java (JVM):</strong> Байт-код запускается внутри JVM, которая интерпретирует или компилирует его на лету в команды процессора конкретного устройства.</li>
+            <li><strong>Строгая статическая типизация:</strong> Все типы данных жестко проверяются на этапе компиляции, что помогает находить ошибки еще до запуска программы.</li>
+            <li><strong>Управление памятью:</strong> Встроенный сборщик мусора (Garbage Collection) автоматически отслеживает и очищает неиспользуемые объекты.</li>
+        </ul>
+        
+        <p><strong>➕ Плюсы Java:</strong> Легендарная надежность, полная кроссплатформенность, гигантская экосистема готовых библиотек и фреймворков, а также доминирование в корпоративном сегменте (Enterprise) и Android-разработке.</p>
+        <p><strong>➖ Минусы и сложности:</strong> Избыточность и многословность кода (нужно писать много шаблонного синтаксиса), высокое потребление оперативной памяти и более высокий порог входа по сравнению с тем же Python.</p>
+    </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>Main.java</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Скопировать</button>
+                </div>
+                <pre><code><span class="kw">public class</span> <span class="fn">Main</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+        System.out.println(<span class="str">"Привет от Java!"</span>);
+    }
+}</code></pre>
+            </div>
+        </section>
+<!-- 6. C++ -->
+        <section id="cpp" class="reveal">
+            <h2><span>06.</span> Язык C++</h2>
+            <p>Обеспечивает предельную производительность и прямой контроль над оперативной памятью.</p>
+
+            <!-- Расширенный теоретический блок для Блока 06 -->
+    <div class="theory-details" style="margin-top: 15px; color: #a0aec0; font-size: 16px; line-height: 1.6;">
+        <p><strong>Как устроен C++ в работе:</strong></p>
+        <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Прямое управление памятью:</strong> Программист сам выделяет и освобождает оперативную память, что дает максимальный контроль над ресурсами «железа».</li>
+            <li><strong>Множественная парадигма:</strong> Поддержка объектно-ориентированного, обобщенного (шаблоны) и частично процедурного программирования.</li>
+            <li><strong>Компиляция в машинный код:</strong> Исходный текст транслируется компилятором напрямую в инструкции процессора без промежуточных виртуальных машин.</li>
+            <li><strong>Стандартная библиотека STL:</strong> Набор готовых эффективных структур данных (вектора, списки, карты) и алгоритмов для ускорения разработки.</li>
+        </ul>
+        
+        <p><strong>➕ Плюсы C++:</strong> Абсолютное рекордное быстродействие, полный контроль над системой, незаменимость в разработке игровых движков, операционных систем, драйверов и тяжелого софта.</p>
+        <p><strong>➖ Минусы и сложности:</strong> Очень высокий порог входа, сложность для новичков из-за ручного управления памятью, риск утечек памяти и багов, а также сложный для чтения синтаксис.</p>
+    </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>main.cpp</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Скопировать</button>
+                </div>
+                <pre><code><span class="cm">#include &lt;iostream&gt;</span>
+
+<span class="kw">int</span> <span class="fn">main</span>() {
+    std::cout &lt;&lt; <span class="str">"Запуск C++ на полную мощность!"</span> &lt;&lt; std::endl;
+    <span class="kw">return</span> 0;
+}</code></pre>
+            </div>
+        </section>
+<!-- 7. Песочница кода -->
+        <section id="playground" class="reveal">
+            <h2><span>07.</span> Песочница кода</h2>
+            <p>Напишите и выполните JavaScript-код прямо в реальном времени:</p>
+
+            <div class="playground-card">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                    <div class="tabs" style="margin-bottom: 0;">
+                        <button class="tab-btn active" onclick="loadPreset('basic
+
+
+', this)">Основы</button>
+                        <button class="tab-btn" onclick="loadPreset('array', this)">Массивы</button>
+                    </div>
+                    <button class="run-btn" onclick="runPlaygroundCode()">▶ Запустить код</button>
+                </div>
+
+                <textarea id="playgroundCode" class="playground-editor" spellcheck="false">const siteName = "CodeStart";
+const starsCount = 280;
+
+console.log("Запуск космической платформы: " + siteName);
+console.log("Отрисовано звёзд на фоне: " + starsCount);</textarea>
+
+                <div class="playground-output" id="playgroundOutput">// Результат выполнения появится здесь...</div>
+            </div>
+        </section>
+<!-- 10. Roadmap -->
+        <section id="roadmap" class="reveal">
+            <h2><span>8.</span> Дорожная карта (Roadmap)</h2>
+            <p>Пошаговый трек развития разработчика от базовых шагов до профессионального уровня:</p>
+
+            <div class="roadmap-timeline">
+                <div class="roadmap-step">
+                    <div class="roadmap-level">Уровень 1: Новичок (Junior)</div>
+                    <div class="roadmap-title">Основы синтаксиса и алгоритмы</div>
+                    <p style="font-size: 0.9rem; margin: 0;">Изучение переменных, циклов, функций и базовых структур данных на выбранном языке. Разбор логики алгоритмов и написание первых небольших программ.</p>
+                    <div class="roadmap-progress">
+
+
+<div class="roadmap-progress-bar" style="width: 35%;"></div>
+                    </div>
+                </div>
+
+                <div class="roadmap-step">
+                    <div class="roadmap-level">Уровень 2: Специалист (Middle)</div>
+                    <div class="roadmap-title">Фреймворки, базы данных и Git</div>
+                    <p style="font-size: 0.9rem; margin: 0;">Работа с REST API, реляционными БД (PostgreSQL), системами контроля версий и веб-серверами. Изучение принципов ООП и командой разработки.</p>
+                    <div class="roadmap-progress">
+                        <div class="roadmap-progress-bar" style="width: 70%;"></div>
+                    </div>
+                </div>
+
+                <div class="roadmap-step">
+                    <div class="roadmap-level">Уровень 3: Эксперт (Senior)</div>
+                    <div class="roadmap-title">Архитектура, CI/CD и оптимизация</div>
+                    <p style="font-size: 0.9rem; margin: 0;">Проектирование микросервисов, распределенные системы, Docker/Kubernetes и оптимизация ресурсов. Архитектурные паттерны и масштабирование проектов.</p>
+                    <div class="roadmap-progress">
+                        <div class="roadmap-progress-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+<!-- 11. Форма обратной связи -->
+        <section id="contact" class="reveal">
+            <h2><span>9.</span> Оставить заявку</h2>
+            <p>Есть вопросы по обучению или хотите подобрать программу? Заполните форму ниже:</p>
+
+            <div class="contact-card">
+                <form id="leadForm" onsubmit="handleFormSubmit(event)">
+                    <div class="form-group">
+                        <label for="userName">Ваше имя</label>
+                        <input type="text" id="userName" class="form-control" required placeholder="Иван Иванов">
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">Ваш Email</label>
+                        <input type="email" id="userEmail" class="form-control" required placeholder="alex@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="targetLang">Интересующий язык</label>
+                        <select id="targetLang" class="form-control" style="background: #0f0f16; color: #fff;">
+                            <option value="python">Python — ИИ и аналитика</option>
+                            <option value="go">Go — Серверы и микросервисы</option>
+                            <option value="java">Java — Enterprise и Android</option>
+                            <option value="cpp">C++ — Игры и системное ПО</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="quiz-btn" style="width: 100%; border: none;">Отправить заявку 🚀</button>
+                </form>
+            </div>
+        </section>
+</main>
+
+ <!-- Уведомление об отправке -->
+    <div id="toast" class="toast-notification">Заявка успешно отправлена! Мы свяжемся с вами.</div>
+
+    <script>
+	 // === 1. ЗВЕЗДНЫЙ ФОН ===
+        const canvas = document.getElementById('space-canvas');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        let isAnimated = true;
+        let animFrameId = null;
+        const stars = [];
+	// --- Переменные для динамического ускорения звёзд от скролла ---
+let scrollVelocity = 0;
+let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+window.addEventListener('scroll', () => {
+    let currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let diff = currentScrollTop - lastScrollTop;
+    
+    scrollVelocity = Math.max(Math.min(diff * 0.3, 15), -15); 
+    lastScrollTop = currentScrollTop;
+});
+
+        function resize() {
+            if (!canvas) return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initStars() {
+            if (!canvas) return;
+            stars.length = 0;
+            for (let i = 0; i < 200; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        function animateSpace() {
+            if (!isAnimated || !ctx || !canvas) return;
+            
+            scrollVelocity *= 0.88;
+             
+            ctx.fillStyle = '#030208';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            stars.forEach(star => {
+                ctx.globalAlpha = star.alpha;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                let currentSpeed = star.speed + scrollVelocity;
+		star.y -= currentSpeed
+                if (star.y < 0) star.y = canvas.height;
+            });
+
+            animFrameId = requestAnimationFrame(animateSpace);
+        }
+
+        function toggleMotion() {
+            isAnimated = !isAnimated;
+            const btn = document.getElementById('motionBtn');
+            if (isAnimated) {
+                if (btn) { btn.innerText = '3D: Вкл'; btn.style.color = '#ff7b00'; }
+                animateSpace();
+            } else {
+                if (btn) { btn.innerText = '3D: Пауза'; btn.style.color = '#94a3b8'; }
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+            }
+        }
+
+        // === 2. ТЕСТ И ИНТЕРАКТИВ ===
+        const quizData = [
+            {
+                question: "Какая область разработки привлекает вас больше всего?",
+                options: [
+                    { text: "Искусственный интеллект и анализ данных (Python)" },
+                    { text: "Высоконагруженный бэкенд и микросервисы (Go)" },
+                    { text: "Корпоративное ПО и Android-разработка (Java)" },
+                    { text: "Создание игр и системное программирование (C++)" }
+                ]
+            }
+        ];
+
+        function loadQuestion() {
+            const questionEl = document.getElementById('questionText');
+            const container = document.getElementById('optionsContainer');
+            const progressBar = document.getElementById('progressBar');
+
+            if (!questionEl || !container) return;
+
+            const q = quizData[0];
+            questionEl.innerText = q.question;
+            container.innerHTML = '';
+            if (progressBar) progressBar.style.width = '50%';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.innerText = opt.text;
+                btn.onclick = () => {
+                    container.innerHTML = `<div style="padding: 1.2rem; background: rgba(255,123,0,0.15); border: 1px solid #ff7b00; border-radius: 8px; color:#fff; font-weight:600; text-align:center;">🚀 Отличный выбор! Вы выбрали правильный путь для обучения.</div>`;
+                    if (progressBar) progressBar.style.width = '100%';
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function switchTab(btn, tabId) {
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+	    
+	    const contents = btn.parentElement.parentElement.querySelectorAll('.tab-content');
+	    contents.forEach(c => c.style.display = 'none');
+            const target = document.getElementById(tabId);
+            if (target) target.style.display = 'block';
+        }
+
+        function copyCode(btn) {
+            const pre = btn.parentElement.nextElementSibling;
+            if (pre) {
+                navigator.clipboard.writeText(pre.innerText).then(() => {
+                    btn.innerText = 'Скопировано!';
+                    setTimeout(() => btn.innerText = 'Скопировать', 2000);
+                });
+            }
+        }
+
+        function filterMenu() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const links = document.querySelectorAll('#menuList li');
+            links.forEach(li => {
+                li.style.display = li.innerText.toLowerCase().includes(input) ? 'block' : 'none';
+            });
+        }
+
+        const playgroundPresets = {
+            basic: `const siteName = "CodeStart";\nconsole.log("Добро пожаловать в " + siteName);`,
+            array: `const langs = ["Python", "Go", "Java", "C++"];\nlangs.forEach(l => console.log("Язык:", l));`
+        };
+
+        function loadPreset(key, btn) {
+            document.getElementById('playgroundCode').value = playgroundPresets[key] || '';
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function runPlaygroundCode() {
+            const code = document.getElementById('playgroundCode').value;
+            const outputEl = document.getElementById('playgroundOutput');
+            outputEl.innerText = '';
+
+            const logs = [];
+            const origLog = console.log;
+            console.log = function(...args) {
+                const formatted = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+                logs.push(formatted);
+                origLog.apply(console, args);
+            };
+
+            try {
+                new Function(code)();
+                outputEl.innerText = logs.length ? logs.join('\n') : '// Успешно выполнено без вывода';
+            } catch (err) {
+                outputEl.innerText = 'Ошибка: ' + err.message;
+            } finally {
+                console.log = origLog;
+            }
+        }
+
+        function filterCheatCategory(cat, btn) {
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.cheat-card');
+            cards.forEach(card => {
+                card.style.display = (cat === 'all' || card.dataset.category === cat) ? 'block' : 'none';
+            });
+        }
+
+        function filterCheatsheets() {
+            const query = document.getElementById('cheatSearchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.cheat-card');
+            cards.forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(query) ? 'block' : 'none';
+            });
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 4000);
+            }
+            document.getElementById('leadForm').reset();
+        }
+
+        // Автоматический запуск после загрузки всей страницы
+        window.addEventListener('DOMContentLoaded', () => {
+            window.addEventListener('resize', resize);
+            resize();
+            initStars();
+            animateSpace();
+            loadQuestion();
+	    typeTitleLoop();
+        });
+// Бесконечный эффект печати заголовка каждые 5 секунд
+function typeTitleLoop() {
+    const text = "CodeStart";
+    const titleElement = document.getElementById("typing-title");
+    if (!titleElement) return;
+
+    function startTyping() {
+        titleElement.textContent = ""; // Очищаем текст
+        let index = 0;
+
+        function typeChar() {
+            if (index < text.length) {
+                titleElement.textContent += text.charAt(index);
+                index++;
+                setTimeout(typeChar, 150); // Скорость печати
+            } else {
+                // Ждем 5 секунд и печатаем заново
+                setTimeout(startTyping, 5000); 
+            }
+        }
+
+        typeChar();
+    }
+
+    startTyping();
+}
+// Функция показа всплывающего уведомления
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    
+    toast.textContent = message || "✨ Готово!";
+    toast.classList.add('show');
+    
+    // Через 2.5 секунды плавно прячем обратно
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2500);
+}
+// Функция плавного появления блоков при скролле в обе стороны
+window.addEventListener('scroll', revealOnScroll);
+
+function revealOnScroll() {
+    var reveals = document.querySelectorAll('.reveal');
+    
+    for (var i = 0; i < reveals.length; i++) {
+        var windowHeight = window.innerHeight;
+        var elementTop = reveals[i].getBoundingClientRect().top;
+        var elementVisible = 100;
+        
+        // Если блок появился на экране — добавляем класс active (показываем)
+        if (elementTop < windowHeight - elementVisible) {
+            reveals[i].classList.add('active');
+        } 
+        // А если блок ушел выше экрана — убираем класс active (прячем обратно для следующего раза)
+        else if (elementTop > windowHeight) {
+            reveals[i].classList.remove('active');
+        }
+    }
+}
+
+// Запускаем один раз при загрузке страницы
+revealOnScroll();
+    </script>
+    <div id="toast"> Успешно выполнено!</div>
+</body>
+</html>
